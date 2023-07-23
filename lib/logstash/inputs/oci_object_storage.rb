@@ -35,23 +35,17 @@ class ObjectStorageGetter
 
     def process_data(raw_data, _object)
         raw_data.split("\n").each do |line|
-            #begin
             begin
-                log = JSON.parse(line)
-            rescue
+                log = { :data => JSON.parse(line) }
+            rescue JSON::ParserError, TypeError => e
                 log = { :data => line }
             end
 
-            log["@metadata"] = {:object_storage => _object.to_hash}
-            event = LogStash::Event.new({ :message => log.to_json })
-            # decorate(event)
+            log["@metadata"] = {
+                :object_storage => _object.to_hash
+            }
+            event = LogStash::Event.new(log.to_json)
             @queue << event
-            #rescue
-            #    log = {:message => line, :"@metadata" => { :object_storage => _object.to_hash } }
-            #    event = log.to_json # LogStash::Event.new(log)
-            #    # decorate(event)
-            #    @queue << event
-            #end
         end
     end
 
