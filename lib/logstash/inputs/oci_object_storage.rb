@@ -30,7 +30,7 @@ class ObjectStorageGetter
       
       buffer = StringIO.new(response.data.to_s)
       raw = Zlib::GzipReader.new(buffer)
-      return raw
+      return raw.read
   end
 
     def process_data(raw_data, _object)
