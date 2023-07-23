@@ -35,10 +35,11 @@ class ObjectStorageGetter
 
     def process_data(raw_data, _object)
         raw_data.split("\n").each do |line|
-            log = @codec.decode(line)
-            log["@metadata"] = _object.to_hash
-            event = LogStash::Event.new(log)
-            @queue << event
+            @codec.decode(line) do |log|
+                log["@metadata"] = _object.to_hash
+                event = LogStash::Event.new(log)
+                @queue << event
+            end            
         end
     end
 
@@ -57,11 +58,9 @@ class ObjectStorageGetter
       _buffer = []
       response.data.objects.each do |object|
           unless object.storage_tier == "Archieve" or object.archival_state == "Archived"
-              #_buffer << object
               download_file object
           end
       end
-      # return _buffer
   end
 
 
