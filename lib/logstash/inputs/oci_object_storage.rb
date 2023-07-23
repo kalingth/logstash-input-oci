@@ -107,7 +107,7 @@ class LogStash::Inputs::OciObjectStorage < LogStash::Inputs::Base
   config_name "oci_object_storage"
 
   # If undefined, Logstash will complain, even if codec is unused.
-  default :codec, "plain"
+  default :codec, "json"
 
   # The message string to use in the event.
   config :namespace, :validate => :string, :required => true
