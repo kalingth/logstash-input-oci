@@ -103,7 +103,7 @@ class ObjectStorageGetter
 end
 
 
-class LogStash::Inputs::object_storage < LogStash::Inputs::Base
+class LogStash::Inputs::ObjectStorage < LogStash::Inputs::Base
   config_name "oci_object_storage"
 
   # If undefined, Logstash will complain, even if codec is unused.
