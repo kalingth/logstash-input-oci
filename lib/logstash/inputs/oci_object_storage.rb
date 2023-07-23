@@ -106,20 +106,16 @@ module LogStash
       def register; end
 
       def run(queue)
-        @logstash_queue = queue
-
         @logger.info("Loading config file: #{@config_path}")
-        parameters = {
-          namespace: @namespace,
-          bucket_name: @bucket_name,
-          credentials: OCI::ConfigFileLoader.load_config(config_file_location: @config_path),
-          queue: @queue,
-          codec: @codec,
-          archieve_after_read: @archieve_after_read,
-          filter_strategy: @filter_strategy
-        }
-        client = ObjectStorageGetter.new(parameters)
-
+        client = ObjectStorageGetter.new({
+            namespace: @namespace,
+            bucket_name: @bucket_name,
+            credentials: OCI::ConfigFileLoader.load_config(config_file_location: @config_path),
+            queue: queue,
+            codec: @codec,
+            archieve_after_read: @archieve_after_read,
+            filter_strategy: @filter_strategy
+        })
         until stop?
           client.retrieve_files
           Stud.stoppable_sleep(@interval) { stop? }
