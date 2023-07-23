@@ -35,16 +35,13 @@ class ObjectStorageGetter
 
     def process_data(raw_data, _object)
         raw_data.split("\n").each do |line|
-            begin
-                log = { :data => JSON.parse(line) }
-            rescue JSON::ParserError, TypeError => e
-                log = { :data => line }
+            log = {:@metadata => JSON.parse _object.to_json}
+            if @codec == "json"
+                log["data"] = JSON.parse(line)
+            else
+                log["message"] = line
             end
-
-            log["@metadata"] = {
-                :object_storage => _object.to_hash
-            }
-            event = LogStash::Event.new({ :message => log.to_json })
+            event = LogStash::Event.new(log)
             @queue << event
         end
     end
@@ -89,8 +86,9 @@ class ObjectStorageGetter
       return (next_start == @last_call) ? _buffer : get_files(prefix, next_start, _buffer)
   end
 
-  def initialize(namespace, bucket_name, credentials, queue, archieve_after_read=true, filter_strategy="archive")
+  def initialize(namespace, bucket_name, credentials, queue, codec, archieve_after_read=true, filter_strategy="archive")
       @queue = queue
+      @codec = codec
       @namespace = namespace
       @bucket_name = bucket_name
       @client = OCI::ObjectStorage::ObjectStorageClient.new(config: credentials)
@@ -105,7 +103,7 @@ class LogStash::Inputs::OciObjectStorage < LogStash::Inputs::Base
   config_name "oci_object_storage"
 
   # If undefined, Logstash will complain, even if codec is unused.
-  # default :codec, "json"
+  default :codec, "plain"
 
   # The message string to use in the event.
   config :namespace, :validate => :string, :required => true
@@ -130,6 +128,7 @@ class LogStash::Inputs::OciObjectStorage < LogStash::Inputs::Base
       bucket_name=@bucket_name,
       credentials=config,
       queue=queue,
+      codec=@codec,
       archieve_after_read=@archieve_after_read,
       filter_strategy="archive"
     )
