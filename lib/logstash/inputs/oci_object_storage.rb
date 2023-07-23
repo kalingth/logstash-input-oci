@@ -11,8 +11,6 @@ require 'logstash/inputs/base'
 # plugin to interact with Oracle Cloud Infrastructure (OCI) Object Storage.
 # It provides methods to retrieve, process, and archive files from a specified OCI Object Storage bucket.
 class ObjectStorageGetter
-  attr_reader :queue
-
   def archieve_object(object)
     return unless @archieve_after_read
 
