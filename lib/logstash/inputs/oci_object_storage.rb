@@ -35,12 +35,8 @@ class ObjectStorageGetter
 
     def process_data(raw_data, _object)
         raw_data.split("\n").each do |line|
-            log = { :@metadata => JSON.parse(_object.to_hash.to_json) }
-            if @codec == "json"
-                log["data"] = JSON.parse(line)
-            else
-                log["message"] = line
-            end
+            log = @codec.decode(line)
+            log["@metadata"] = _object.to_hash
             event = LogStash::Event.new(log)
             @queue << event
         end
@@ -103,7 +99,7 @@ class LogStash::Inputs::OciObjectStorage < LogStash::Inputs::Base
   config_name "oci_object_storage"
 
   # If undefined, Logstash will complain, even if codec is unused.
-  config :codec, :validate => :string, :default => "plain"
+  default :codec, "plain"
 
   # The message string to use in the event.
   config :namespace, :validate => :string, :required => true
