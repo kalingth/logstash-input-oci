@@ -33,22 +33,27 @@ class ObjectStorageGetter
       return raw.read
   end
 
-  def process_data(raw_data, _object)
-      raw_data.split("\n").each do |line|
-        begin
-            log = JSON.parse(line)
+    def process_data(raw_data, _object)
+        raw_data.split("\n").each do |line|
+            #begin
+            begin
+                log = JSON.parse(line)
+            rescue
+                log = { :data => line }
+            end
+
             log["@metadata"] = {:object_storage => _object.to_hash}
-            event = log.to_json # LogStash::Event.new(log)
+            event = LogStash::Event.new({ :message => log.to_json })
             # decorate(event)
             @queue << event
-        rescue
-            log = {:message => line, :"@metadata" => { :object_storage => _object.to_hash } }
-            event = log.to_json # LogStash::Event.new(log)
-            # decorate(event)
-            @queue << event
+            #rescue
+            #    log = {:message => line, :"@metadata" => { :object_storage => _object.to_hash } }
+            #    event = log.to_json # LogStash::Event.new(log)
+            #    # decorate(event)
+            #    @queue << event
+            #end
         end
-      end
-  end
+    end
 
   def download_file(_object)
       response = @client.get_object(
