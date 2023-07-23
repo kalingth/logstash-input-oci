@@ -39,12 +39,12 @@ class ObjectStorageGetter
             log = JSON.parse(line)
             log["@metadata"] = {:object_storage => _object.to_hash}
             event = log.to_json # LogStash::Event.new(log)
-            decorate(event)
+            # decorate(event)
             @queue << event
         rescue
             log = {:message => line, :"@metadata" => { :object_storage => _object.to_hash } }
             event = log.to_json # LogStash::Event.new(log)
-            decorate(event)
+            # decorate(event)
             @queue << event
         end
       end
