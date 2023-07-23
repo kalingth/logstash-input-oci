@@ -35,7 +35,7 @@ class ObjectStorageGetter
 
     def process_data(raw_data, _object)
         raw_data.split("\n").each do |line|
-            log = { :@metadata => JSON.parse(_object.to_json) }
+            log = { :@metadata => JSON.parse(_object.to_hash.to_json) }
             if @codec == "json"
                 log["data"] = JSON.parse(line)
             else
