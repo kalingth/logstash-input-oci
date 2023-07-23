@@ -66,7 +66,7 @@ class ObjectStorageGetter
       response.data.objects.each do |object|
           unless object.storage_tier == "Archieve" or object.archival_state == "Archived"
               #_buffer << object
-              client.download_file object
+              download_file object
           end
       end
       # return _buffer
