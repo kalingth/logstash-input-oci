@@ -34,13 +34,13 @@ class ObjectStorageGetter
   end
 
     def process_data(raw_data, _object)
-        raw_data.split("\n").each do |line|
-            @codec.decode(line) do |log|
+        # raw_data.split("\n").each do |line|
+            @codec.decode(raw_data) do |log|
                 log["@metadata"] = _object.to_hash
                 event = LogStash::Event.new(log)
                 @queue << event
             end            
-        end
+        # end
     end
 
   def download_file(_object)
