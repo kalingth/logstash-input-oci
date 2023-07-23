@@ -30,17 +30,14 @@ class ObjectStorageGetter
       
       buffer = StringIO.new(response.data.to_s)
       raw = Zlib::GzipReader.new(buffer)
-      return raw.read
+      return raw
   end
 
     def process_data(raw_data, _object)
-        # raw_data.split("\n").each do |line|
-            @codec.decode(raw_data) do |log|
-                log["@metadata"] = _object.to_hash
-                event = LogStash::Event.new(log)
-                @queue << event
-            end            
-        # end
+        @codec.decode(raw_data) do |event|
+            event.set("[@metadata]", _object.to_hash)
+            @queue << event
+        end            
     end
 
   def download_file(_object)
