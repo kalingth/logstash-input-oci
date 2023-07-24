@@ -76,6 +76,7 @@ class ObjectStorageGetter
 
     if response.data.next_start_with.nil?
       @logger.info('Nil pointer received!')
+      return buffer
     else
       @logger.info("Retriving next page: Last Page: #{@next_start} - Next Page: #{response.data.next_start_with}")
       @next_start = response.data.next_start_with
