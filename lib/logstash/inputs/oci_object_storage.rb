@@ -38,11 +38,10 @@ class ObjectStorageGetter
 
   def process_data(raw_data, object)
     meta = JSON.parse object.to_hash.to_json
-    codec = @codec.clone
-    codec.decode(raw_data) do |event|
+    @codec.decode(raw_data) do |event|
       event.set('[@metadata][oci][object_storage]', meta)
     end
-    codec.flush do |event|
+    @codec.flush do |event|
         @queue << event
     end
   end
@@ -82,13 +81,13 @@ class ObjectStorageGetter
 
     if response.data.next_start_with.nil?
       @logger.debug('Nil pointer received!')
-      return buffer
     else
       @logger.info("Retriving next page: Last Page: #{@next_start} - Next Page: #{response.data.next_start_with}")
       @next_start = response.data.next_start_with
       parameters[:start] = @next_start
-      retrieve_files_recursive(parameters, buffer)
+      return retrieve_files_recursive(parameters, buffer)
     end
+    return buffer
   end
 
   def retrieve_files(prefix = '')
