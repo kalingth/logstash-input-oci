@@ -66,7 +66,7 @@ class ObjectStorageGetter
       next if @sincedb_time > nomarlized_time
 
       time_buffer << nomarlized_time
-      @logger.info(object.name)
+      @logger.info("Downloading file from #{object.name}")
 
       pool.process do
         download_file object
@@ -191,7 +191,7 @@ module LogStash
         client = ObjectStorageGetter.new(parameters)
         until stop?
           client.retrieve_files
-          @sincedb.write client.sincedb_time
+          @sincedb.write(client.sincedb_time) if filter_strategy == 'sincedb'
           Stud.stoppable_sleep(@interval) { stop? }
         end
       end
