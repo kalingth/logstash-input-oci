@@ -5,7 +5,6 @@ require 'zlib'
 require 'date'
 require 'tmpdir'
 require 'stringio'
-require 'thread/pool'
 require 'stud/interval'
 require 'logstash/namespace'
 require 'logstash/inputs/base'
@@ -59,7 +58,7 @@ class ObjectStorageGetter
 
   def download_filtered_files
     time_buffer = []
-    pool = Thread.pool(@threads)
+    # pool = Thread.pool(@threads)
     @buffer.each do |object|
       nomarlized_time = Time.parse(object.time_modified.to_s)
       next if (object.storage_tier == 'Archieve') || (object.archival_state == 'Archived')
@@ -67,10 +66,7 @@ class ObjectStorageGetter
 
       time_buffer << nomarlized_time
       @logger.info("Downloading file from #{object.name}")
-
-      pool.process do
-        download_file object
-      end
+      download_file object
     end
     @sincedb_time = time_buffer.max
   end
