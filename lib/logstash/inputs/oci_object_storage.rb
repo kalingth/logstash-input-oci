@@ -90,7 +90,7 @@ class ObjectStorageGetter
       start: @next_start || '',
       fields: 'name,timeCreated,timeModified,storageTier,archivalState'
     }
-    retrieve_files_recursive parameters
+    buffer = retrieve_files_recursive parameters
     download_filtered_files buffer
   end
 
