@@ -72,7 +72,7 @@ class ObjectStorageGetter
         @logger.warn("The file #{object.name} cannot be downloaded: #{error} => #{object.to_hash}")
       end
     end
-    @sincedb_time = time_buffer.max
+    @sincedb_time = time_buffer.max unless time_buffer.empty?
   end
 
   def retrieve_files_recursive(parameters, buffer=[])
