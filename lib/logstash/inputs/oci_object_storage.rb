@@ -40,9 +40,7 @@ class ObjectStorageGetter
     meta = JSON.parse object.to_hash.to_json
     @codec.decode(raw_data) do |event|
       event.set('[@metadata][oci][object_storage]', meta)
-    end
-    @codec.flush do |event|
-        @queue << event
+      @queue << event
     end
   end
 
