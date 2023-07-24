@@ -72,7 +72,7 @@ class ObjectStorageGetter
       pool.process do
         download_file object
       end
-    
+      pool.wait_for_termination
     end
     @sincedb_time = time_buffer.max
   end
@@ -82,7 +82,7 @@ class ObjectStorageGetter
     buffer.push(*response.data.objects)
 
     if response.data.next_start_with.nil?
-      @logger.info('Nil pointer received!')
+      @logger.debug('Nil pointer received!')
       return buffer
     else
       @logger.info("Retriving next page: Last Page: #{@next_start} - Next Page: #{response.data.next_start_with}")
