@@ -62,7 +62,7 @@ class ObjectStorageGetter
     time_buffer = []
     buffer.each do |object|
       normalized_time = Time.parse(object.time_modified.to_s)
-      next if (object.storage_tier.downcase == 'archieve') || (object.archival_state.downcase == 'archived')
+      next if (['Archive'].includes? object.storage_tier) || (["Restoring", "Archived"].includes? object.archival_state)
       next if @sincedb_time > normalized_time
 
       time_buffer << normalized_time
