@@ -73,7 +73,7 @@ class ObjectStorageGetter
         download_file object
       end
     end
-    pool.wait_for_termination
+    pool.shutdown
     @sincedb_time = time_buffer.max
   end
 
