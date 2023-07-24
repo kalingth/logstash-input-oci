@@ -5,6 +5,7 @@ require 'zlib'
 require 'date'
 require 'tmpdir'
 require 'stringio'
+require 'thread/pool'
 require 'stud/interval'
 require 'logstash/namespace'
 require 'logstash/inputs/base'
@@ -18,14 +19,11 @@ class ObjectStorageGetter
   def archieve_object(object)
     return unless @archieve_after_read
 
-    @client.update_object_storage_tier(
-      @namespace,
-      @bucket_name,
-      {
-        objectName: object.name,
-        storageTier: 'Archive'
-      }
-    )
+    parmeters = {
+      objectName: object.name,
+      storageTier: 'Archive'
+    }
+    @client.update_object_storage_tier(@namespace, @bucket_name, parmeters)
   end
 
   def decode_gzip_file(object, response)
@@ -57,6 +55,7 @@ class ObjectStorageGetter
 
   def download_filtered_files(buffer)
     time_buffer = []
+    pool = Thread.pool(@threads)
     buffer.each do |object|
       normalized_time = Time.parse(object.time_modified.to_s)
       next if (['Archive'].include? object.storage_tier) || (["Restoring", "Archived"].include? object.archival_state)
@@ -64,12 +63,16 @@ class ObjectStorageGetter
 
       time_buffer << normalized_time
       @logger.info("Downloading file from #{object.name}")
-      begin
-        download_file object
-      rescue OCI::Errors::ServiceError => error
-        @logger.warn("The file #{object.name} cannot be downloaded: #{error} => #{object.to_hash}")
+      
+      pool.process do
+        begin
+            download_file object
+        rescue OCI::Errors::ServiceError => error
+            @logger.warn("The file #{object.name} cannot be downloaded: #{error} => #{object.to_hash}")
+        end
       end
     end
+    pool.shutdown
     @sincedb_time = time_buffer.max unless time_buffer.empty?
   end
 
