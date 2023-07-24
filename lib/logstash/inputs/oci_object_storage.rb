@@ -55,10 +55,10 @@ class ObjectStorageGetter
     archieve_object object if @filter_strategy == 'archive'
   end
 
-  def download_filtered_files
+  def download_filtered_files(buffer)
     time_buffer = []
     # pool = Thread.pool(@threads)
-    @buffer.each do |object|
+    buffer.each do |object|
       normalized_time = Time.parse(object.time_modified.to_s)
       next if (object.storage_tier == 'Archieve') || (object.archival_state == 'Archived')
       next if @sincedb_time > normalized_time
@@ -70,29 +70,28 @@ class ObjectStorageGetter
     @sincedb_time = time_buffer.max
   end
 
-  def retrieve_files_recursive(parameters)
+  def retrieve_files_recursive(parameters, buffer=[])
     response = @client.list_objects(@namespace, @bucket_name, parameters)
-    @buffer.push(*response.data.objects)
+    buffer.push(*response.data.objects)
 
     if response.data.next_start_with.nil?
-      @logger.debug('Nil pointer received!')
+      @logger.info('Nil pointer received!')
     else
       @logger.info("Retriving next page: Last Page: #{@next_start} - Next Page: #{response.data.next_start_with}")
       @next_start = response.data.next_start_with
       parameters[:start] = @next_start
-      retrieve_files_recursive(parameters)
+      retrieve_files_recursive(parameters, buffer)
     end
   end
 
   def retrieve_files(prefix = '')
-    @buffer = []
     parameters = {
       prefix: prefix,
       start: @next_start || '',
       fields: 'name,timeCreated,timeModified,storageTier,archivalState'
     }
-    retrieve_files_recursive(parameters)
-    download_filtered_files
+    retrieve_files_recursive parameters
+    download_filtered_files buffer
   end
 
   def initialize(parameters)
@@ -107,7 +106,6 @@ class ObjectStorageGetter
     @logger = parameters[:logger]
     @threads = parameters[:threads]
     @next_start = ''
-    @buffer = []
   end
 end
 
