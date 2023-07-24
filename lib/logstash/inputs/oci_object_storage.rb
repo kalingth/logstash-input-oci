@@ -63,13 +63,14 @@ class ObjectStorageGetter
       next if @sincedb_time > object.time_modified
 
       time_buffer << Time.parse(object.time_modified.to_s)
+      @logger.info(object.name)
       download_file object
     end
     @sincedb_time = time_buffer.max
   end
 
   def retrieve_files_recursive(parameters)
-    response = @client.list_objects(@namespace, @bucket_name, parmeters)
+    response = @client.list_objects(@namespace, @bucket_name, parameters)
     response.data.objects.each do |object|
       next if @buffer.include? object
 
@@ -168,7 +169,7 @@ module LogStash
 
       def run(queue)
         @logger.info("Loading config file: #{@config_path}")
-        parmeters = {
+        parameters = {
           namespace: @namespace,
           bucket_name: @bucket_name,
           credentials: OCI::ConfigFileLoader.load_config(config_file_location: @config_path),
@@ -179,7 +180,7 @@ module LogStash
           sincedb_time: @sincedb_time,
           logger: @logger
         }
-        client = ObjectStorageGetter.new(parmeters)
+        client = ObjectStorageGetter.new(parameters)
         until stop?
           client.retrieve_files
           @sincedb.write client.sincedb_time
