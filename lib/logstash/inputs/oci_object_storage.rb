@@ -59,10 +59,11 @@ class ObjectStorageGetter
   def download_filtered_files
     time_buffer = []
     @buffer.each do |object|
+      nomarlized_time = Time.parse(object.time_modified.to_s)
       next if (object.storage_tier == 'Archieve') || (object.archival_state == 'Archived')
-      next if @sincedb_time > object.time_modified
+      next if @sincedb_time > nomarlized_time
 
-      time_buffer << Time.parse(object.time_modified.to_s)
+      time_buffer << nomarlized_time
       @logger.info(object.name)
       download_file object
     end
