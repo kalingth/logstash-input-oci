@@ -51,6 +51,20 @@ class ObjectStorageGetter
     raw_data = decode_gzip_file object, response
     process_data raw_data, object
     archieve_object object if @filter_strategy == 'archive'
+  rescue OCI::Errors::ServiceError => e
+    @logger.warn("The file #{object.name} cannot be downloaded: #{e} => #{object.to_hash}")
+  end
+
+  def skip_file?(object, normalized_time)
+    if ['Archive'].include? object.storage_tier
+      true
+    elsif %w[Restoring Archived].include? object.archival_state
+      true
+    elsif (@sincedb_time > normalized_time) && (@filter_strategy == 'sincedb')
+      true
+    else
+      false
+    end
   end
 
   def download_filtered_files(buffer)
@@ -58,37 +72,28 @@ class ObjectStorageGetter
     pool = Thread.pool(@threads)
     buffer.each do |object|
       normalized_time = Time.parse(object.time_modified.to_s)
-      next if (['Archive'].include? object.storage_tier) || (["Restoring", "Archived"].include? object.archival_state)
-      next if @sincedb_time > normalized_time
+      next if skip_file? object, normalized_time
 
       time_buffer << normalized_time
       @logger.info("Downloading file from #{object.name}")
-      
-      pool.process do
-        begin
-            download_file object
-        rescue OCI::Errors::ServiceError => error
-            @logger.warn("The file #{object.name} cannot be downloaded: #{error} => #{object.to_hash}")
-        end
-      end
+      pool.process { download_file object }
     end
     pool.shutdown
-    @sincedb_time = time_buffer.max unless time_buffer.empty?
+    @sincedb_time = time_buffer.max unless time_buffer.empty? && (@filter_strategy == 'sincedb')
   end
 
-  def retrieve_files_recursive(parameters, buffer=[])
+  def retrieve_files_recursive(parameters, buffer = [])
     response = @client.list_objects(@namespace, @bucket_name, parameters)
     buffer.push(*response.data.objects)
-
     if response.data.next_start_with.nil?
       @logger.debug('Nil pointer received!')
-    else
-      @logger.info("Retriving next page: Last Page: #{@next_start} - Next Page: #{response.data.next_start_with}")
-      @next_start = response.data.next_start_with
-      parameters[:start] = @next_start
-      return retrieve_files_recursive(parameters, buffer)
+      return buffer
     end
-    return buffer
+
+    @logger.info("Retriving next page: Last Page: #{@next_start} - Next Page: #{response.data.next_start_with}")
+    @next_start = response.data.next_start_with
+    parameters[:start] = @next_start
+    retrieve_files_recursive(parameters, buffer)
   end
 
   def retrieve_files(prefix = '')
@@ -138,12 +143,16 @@ module LogStash
       config :interval, validate: :number, default: 30
       config :sincedb_path, validate: :string, default: nil
 
-      def sincedb_file
+      def sincedb_folder
         logstash_path = LogStash::SETTINGS.get_value('path.data')
-        digest = Digest::MD5.hexdigest("#{@namespace}+#{@bucket_name}+#{@prefix}")
         dir = File.join(logstash_path, 'plugins', 'inputs', 'oci_object_storage')
         FileUtils.mkdir_p(dir)
-        path = File.join(dir, "sincedb_#{digest}")
+        dir
+      end
+
+      def sincedb_file
+        digest = Digest::MD5.hexdigest("#{@namespace}+#{@bucket_name}+#{@prefix}")
+        path = File.join(sincedb_folder, "sincedb_#{digest}")
         if ENV['HOME']
           old = File.join(ENV['HOME'], ".sincedb_#{digest}")
           if File.exist?(old)
