@@ -70,7 +70,7 @@ class ObjectStorageGetter
       begin
         download_file object
       rescue => OCI::Errors::ServiceError
-        @logger.warning("The file #{object.name} cannot be downloaded => #{object.to_hash}")
+        @logger.warning("The file #{object.name} cannot be downloaded => #{object.to_hash.to_json}")
       end
     end
     @sincedb_time = time_buffer.max
