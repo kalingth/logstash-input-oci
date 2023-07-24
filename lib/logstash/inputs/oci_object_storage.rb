@@ -60,19 +60,19 @@ class ObjectStorageGetter
 
   def download_filtered_files(buffer)
     time_buffer = []
-    # pool = Thread.pool(@threads)
     buffer.each do |object|
       normalized_time = Time.parse(object.time_modified.to_s)
-      next if (object.storage_tier == 'Archieve') || (object.archival_state == 'Archived')
+      next if (object.storage_tier.downcase == 'archieve') || (object.archival_state.downcase == 'archived')
       next if @sincedb_time > normalized_time
 
       time_buffer << normalized_time
       @logger.info("Downloading file from #{object.name}")
-      # pool.process do
-      download_file object
-      # end
+      begin
+        download_file object
+      rescue => OCI::Errors::ServiceError
+        @logger.warn("The file #{object.name} cannot be downloaded")
+      end
     end
-    # pool.shutdown
     @sincedb_time = time_buffer.max
   end
 
