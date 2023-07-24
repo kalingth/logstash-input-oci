@@ -5,6 +5,7 @@ require 'zlib'
 require 'date'
 require 'tmpdir'
 require 'stringio'
+require 'thread/pool'
 require 'stud/interval'
 require 'logstash/namespace'
 require 'logstash/inputs/base'
@@ -39,7 +40,7 @@ class ObjectStorageGetter
   def process_data(raw_data, object)
     meta = JSON.parse object.to_hash.to_json
     @codec.decode(raw_data) do |event|
-      event.set('[@metadata]', meta)
+      event.set('[@metadata][oci][object_storage]', meta)
       @queue << event
     end
     @codec.flush
@@ -58,6 +59,7 @@ class ObjectStorageGetter
 
   def download_filtered_files
     time_buffer = []
+    pool = Thread.pool(@threads)
     @buffer.each do |object|
       nomarlized_time = Time.parse(object.time_modified.to_s)
       next if (object.storage_tier == 'Archieve') || (object.archival_state == 'Archived')
@@ -65,7 +67,10 @@ class ObjectStorageGetter
 
       time_buffer << nomarlized_time
       @logger.info(object.name)
-      download_file object
+
+      pool.process do
+        download_file object
+      end
     end
     @sincedb_time = time_buffer.max
   end
@@ -111,6 +116,7 @@ class ObjectStorageGetter
     @filter_strategy = parameters[:filter_strategy]
     @sincedb_time = parameters[:sincedb_time] || Time.new(0)
     @logger = parameters[:logger]
+    @threads = parameters[:threads]
     @next_start = ''
     @buffer = []
   end
@@ -179,6 +185,7 @@ module LogStash
           archieve_after_read: @archieve_after_read,
           filter_strategy: @filter_strategy,
           sincedb_time: @sincedb_time,
+          threads: @threads,
           logger: @logger
         }
         client = ObjectStorageGetter.new(parameters)
