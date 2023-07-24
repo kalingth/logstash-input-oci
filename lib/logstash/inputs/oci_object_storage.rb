@@ -42,7 +42,6 @@ class ObjectStorageGetter
       event.set('[@metadata][oci][object_storage]', meta)
       @queue << event
     end
-    @codec.flush
   end
 
   def download_file(object)
@@ -60,11 +59,11 @@ class ObjectStorageGetter
     time_buffer = []
     # pool = Thread.pool(@threads)
     @buffer.each do |object|
-      nomarlized_time = Time.parse(object.time_modified.to_s)
+      normalized_time = Time.parse(object.time_modified.to_s)
       next if (object.storage_tier == 'Archieve') || (object.archival_state == 'Archived')
-      next if @sincedb_time > nomarlized_time
+      next if @sincedb_time > normalized_time
 
-      time_buffer << nomarlized_time
+      time_buffer << normalized_time
       @logger.info("Downloading file from #{object.name}")
       download_file object
     end
@@ -73,11 +72,7 @@ class ObjectStorageGetter
 
   def retrieve_files_recursive(parameters)
     response = @client.list_objects(@namespace, @bucket_name, parameters)
-    response.data.objects.each do |object|
-      next if @buffer.include? object
-
-      @buffer.push(object)
-    end
+    @buffer.push(*response.data.objects)
 
     if response.data.next_start_with.nil?
       @logger.debug('Nil pointer received!')
@@ -90,16 +85,14 @@ class ObjectStorageGetter
   end
 
   def retrieve_files(prefix = '')
+    @buffer = []
     parameters = {
       prefix: prefix,
       start: @next_start || '',
       fields: 'name,timeCreated,timeModified,storageTier,archivalState'
     }
     retrieve_files_recursive(parameters)
-    @buffer.sort { |x, y| x.time_modified <=> y.time_modified }
     download_filtered_files
-    total_length = [@buffer.length, 10_000].min
-    @buffer = @buffer.slice(-total_length, 10_000)
   end
 
   def initialize(parameters)
