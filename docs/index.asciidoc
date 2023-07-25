@@ -1,61 +1,115 @@
-:plugin: example
+:plugin: oci_object_storage
 :type: input
 :default_codec: plain
 
 ///////////////////////////////////////////
 START - GENERATED VARIABLES, DO NOT EDIT!
 ///////////////////////////////////////////
-:version: %VERSION%
-:release_date: %RELEASE_DATE%
-:changelog_url: %CHANGELOG_URL%
+:version: 1.0.0
+:release_date: 2023-07-23
+:changelog_url: https://example.com/changelog
 :include_path: ../../../../logstash/docs/include
 ///////////////////////////////////////////
 END - GENERATED VARIABLES, DO NOT EDIT!
 ///////////////////////////////////////////
 
-[id="plugins-{type}s-{plugin}"]
+[id="plugins-inputs-oci_object_storage"]
 
-=== Example input plugin
+=== OCI Object Storage input plugin
 
 include::{include_path}/plugin_header.asciidoc[]
 
 ==== Description
 
-ADD DESCRIPTION HERE
+The OCI Object Storage input plugin allows Logstash to read data from Oracle Cloud Infrastructure (OCI) Object Storage.
+It periodically fetches files from a specified OCI Object Storage bucket and forwards the data to the Logstash pipeline for further processing.
 
-[id="plugins-{type}s-{plugin}-options"]
-==== Example Input Configuration Options
+[id="plugins-inputs-oci_object_storage-options"]
+==== OCI Object Storage Configuration Options
 
-This plugin supports the following configuration options plus the <<plugins-{type}s-{plugin}-common-options>> described later.
+This plugin supports the following configuration options plus the <<plugins-inputs-oci_object_storage-common-options>> described later.
 
 [cols="<,<,<",options="header",]
 |=======================================================================
 |Setting |Input type|Required
-| <<plugins-{type}s-{plugin}-setting_name>> |{logstash-ref}/configuration-file-structure.html#boolean[boolean]|No
-| <<plugins-{type}s-{plugin}-another_setting_name>> |{logstash-ref}/configuration-file-structure.html#hash[hash]|No
+| namespace |String|Yes
+| bucket_name |String|Yes
+| config_path |String|Yes
+| archieve_after_read |boolean|No
+| filter_strategy |String|No
+| threads |Number|No
+| interval |Number|No
+| sincedb_path |String|No
 |=======================================================================
 
-Also see <<plugins-{type}s-{plugin}-common-options>> for a list of options supported by all
+Also see <<plugins-inputs-oci_object_storage-common-options>> for a list of options supported by all
 input plugins.
 
-[id="plugins-{type}s-{plugin}-setting_name"]
-===== `setting_name` 
+[id="plugins-inputs-oci_object_storage-namespace"]
+===== `namespace` 
 
-  * Value type is {logstash-ref}/configuration-file-structure.html#boolean[boolean]
+  * Value type is String
+  * Required
+
+The OCI Object Storage namespace used to specify the compartment in which the bucket resides.
+
+[id="plugins-inputs-oci_object_storage-bucket_name"]
+===== `bucket_name` 
+
+  * Value type is String
+  * Required
+
+The name of the OCI Object Storage bucket from which files will be retrieved.
+
+[id="plugins-inputs-oci_object_storage-config_path"]
+===== `config_path` 
+
+  * Value type is String
+  * Required
+
+The path to the configuration file used to authenticate and authorize access to the OCI Object Storage service.
+
+[id="plugins-inputs-oci_object_storage-archieve_after_read"]
+===== `archieve_after_read` 
+
+  * Value type is boolean
   * Default value is `true`
 
-ADD DESCRIPTION HERE.
+If set to `true`, the plugin will archive the object in OCI Object Storage after reading it.
 
-[id="plugins-{type}s-{plugin}-another_setting_name"]
-===== `another_setting_name` 
+[id="plugins-inputs-oci_object_storage-filter_strategy"]
+===== `filter_strategy` 
 
-  * Value type is <<hash,hash>>
-  * Default value is `{}`
+  * Value type is String
+  * Default value is `archive`
 
-ADD DESCRIPTION HERE.
+The filter strategy used for selecting files to be retrieved. Available options are `archive` and `sincedb`.
 
+[id="plugins-inputs-oci_object_storage-threads"]
+===== `threads` 
 
-[id="plugins-{type}s-{plugin}-common-options"]
-include::{include_path}/{type}.asciidoc[]
+  * Value type is Number
+  * Default value is maximum CPU cores available
+
+The number of threads to use for file retrieval and processing. If not specified, the plugin will use the maximum CPU core count available.
+
+[id="plugins-inputs-oci_object_storage-interval"]
+===== `interval` 
+
+  * Value type is Number
+  * Default value is `30`
+
+The time interval in seconds between successive retrievals of files from the OCI Object Storage bucket.
+
+[id="plugins-inputs-oci_object_storage-sincedb_path"]
+===== `sincedb_path` 
+
+  * Value type is String
+  * Default value is `nil`
+
+The path to the sincedb file. If not specified, the plugin will use the default generated sincedb file.
+
+[id="plugins-inputs-oci_object_storage-common-options"]
+include::{include_path}/input.asciidoc[]
 
 :default_codec!:
